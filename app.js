@@ -30,7 +30,9 @@ app.use("/daily-rate", dailyRateRouter);
 app.use("/product", productRouter);
 app.use("/day", dayRouter);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-
+app.get("/", (_req, res) => {
+  res.send("Welcome to the API!");
+});
 app.use((_req, res) => {
   res.status(404).json({ message: "Not found" });
 });
