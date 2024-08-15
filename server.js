@@ -1,7 +1,8 @@
-import app from "./app.js";
-import mongoose from "mongoose";
-import "dotenv/config";
-mongoose.set("strictQuery", false); 
+const mongoose = require("mongoose");
+const app = require("./app");
+require("dotenv").config();
+
+mongoose.set("strictQuery", false);
 const { DB_HOST, PORT = 3000 } = process.env;
 mongoose
   .connect(DB_HOST)

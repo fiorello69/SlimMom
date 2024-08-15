@@ -1,47 +1,45 @@
-import express, { json } from "express";
-import logger from "morgan";
-import cors from "cors";
-import fs from "fs";
-import JSON5 from "json5";
-import authRouter from "./routes/api/authRouter.js";
-import productsRouter from "./routes/api/productsRouter.js";
-import myProductsRouter from "./routes/api/myProductsRouter.js";
-import swaggerUi from "swagger-ui-express";
-import "dotenv/config";
+const express = require("express");
+const logger = require("morgan");
+const cors = require("cors");
+const swaggerUi = require("swagger-ui-express");
+const swaggerDocument = require("./swagger/swagger-output.json");
+require("dotenv").config();
+
+const authRouter = require("./routes/api/auth");
+const dailyRateRouter = require("./routes/api/daily-rate");
+const dayRouter = require("./routes/api/day");
+const productRouter = require("./routes/api/product");
 
 const app = express();
-const formatsLogger = app.get("env") === "development" ? "dev" : "short";
-const swaggerDocument = JSON5.parse(fs.readFileSync("./swagger.json", "utf-8"));
 
-// Aplică middleware-ul CORS înainte de celelalte middleware-uri
+const formatsLogger = app.get("env") === "development" ? "dev" : "short";
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.use(logger(formatsLogger));
 app.use(
   cors({
     origin: ["http://localhost:3001", "https://fiorello69.github.io"],
     methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
-
-app.use(logger(formatsLogger));
-app.options("*", cors());
-app.use(json());
-// Rute
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-app.use("/api/users", authRouter);
-app.use("/api/products", productsRouter);
-app.use("/api/myProducts", myProductsRouter);
-
-// Servire fișiere statice
+app.use(express.json());
 app.use(express.static("public"));
 
-// Gestionare rute neidentificate
-app.use((_, res) => res.status(404).json({ message: "Not Found" }));
+app.use("/auth", authRouter);
+app.use("/daily-rate", dailyRateRouter);
+app.use("/product", productRouter);
+app.use("/day", dayRouter);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-// Gestionare erori
-app.use((err, _req, res, _next) => {
-  const { status = 500, message = "Server internal error" } = err;
-  res.status(status).json({ message });
+app.use((_req, res) => {
+  res.status(404).json({ message: "Not found" });
 });
 
-export default app;
+app.use((err, _req, res, _next) => {
+  const { status = 500, message = "Server error" } = err;
+  res.status(status).json({
+    message,
+  });
+});
+
+module.exports = app;
